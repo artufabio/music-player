@@ -1,5 +1,9 @@
 
 const music = document.querySelector('audio');
+const progressContainer = document.getElementById('progress-container');
+const progress = document.getElementById('progress');
+const currentTimeEl = document.getElementById('current-time');
+const durationEl = document.getElementById('duration');
 const prevBtn = document.getElementById('prev');
 const playBtn = document.getElementById('play');
 const nextBtn = document.getElementById('next');
@@ -83,6 +87,56 @@ const nextSong = () => {
 // On Load - Select First Song
 loadSong(songs[songIndex]);
 
+// Calculate song duration to display on the top of the progress bar
+const displaySongDuration = durSong => {
+    const durationMinutes = Math.floor(durSong / 60);  // Math.floor rounds down the given number
+    let durationSeconds = Math.floor(durSong % 60);
+    if (durationSeconds < 10) {
+        durationSeconds = `0${durationSeconds}`;
+    }
+    // Delay switching duration Element to avoid NaN
+    if (durationSeconds) {
+        return durationEl.textContent = `${durationMinutes}:${durationSeconds}`;
+    }
+}
+
+// Show duration first song before playing
+function initialDuration() {
+    const { duration } = music;
+    displaySongDuration(duration);
+}
+
+// Update Progress Bar and Time
+const updateProgressBar = event => {
+    if (isPlaying) {
+        const {duration, currentTime} = event.srcElement;
+        // update progress bar width
+        const progressPercent = (currentTime / duration) * 100;
+        progress.style.width = `${progressPercent}%`;
+        displaySongDuration(duration);
+        // Calculate display for current time
+        const currentMinutes = Math.floor(currentTime / 60);  
+        let currentSeconds = Math.floor(currentTime % 60);
+        if (currentSeconds < 10) {
+            currentSeconds = `0${currentSeconds}`;
+        }
+        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds}`;
+    }
+}
+
+function setProgressBar(event) {
+    const width = this.clientWidth; //width of the progress bar
+    //in an event, this refers to the element that received the event. Inside an aero function this wouldn't work as it has a different usage. 
+    const clickX = event.offsetX; //point clicked on the progress bar
+    const {duration} = music; //duration of the song
+    music.currentTime = (clickX / width) * duration; // update the current time in seconds
+}
+
 // Event Listeners
 prevBtn.addEventListener('click', prevSong);
 nextBtn.addEventListener('click', nextSong);
+music.addEventListener('loadedmetadata', initialDuration);
+music.addEventListener('ended', nextSong);
+music.addEventListener('timeupdate', updateProgressBar);
+progressContainer.addEventListener('click', setProgressBar);
+
